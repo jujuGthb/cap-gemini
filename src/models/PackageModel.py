@@ -80,11 +80,37 @@ class InputApiKey(Config):
     class Config:
         title = "API Key"
         
+ 
+class VersionFlash3(Config):
+    name: Literal["gemini-3-flash-preview"] = "gemini-3-flash-preview"
+    value: Literal["gemini-3-flash-preview"] = "gemini-3-flash-preview"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Gemini 3 Flash"      
+class VersionPro3(Config):
+    name: Literal["gemini-3-pro-preview"] = "gemini-3-pro-preview"
+    value: Literal["gemini-3-pro-preview"] = "gemini-3-pro-preview"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Gemini 3 Pro"
+class VersionFlash2(Config):
+    name: Literal["gemini-2.0-flash"] = "gemini-2.0-flash"
+    value: Literal["gemini-2.0-flash"] = "gemini-2.0-flash"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Gemini 2.0 Flash"
+        
 class InputModelVersion(Config):
     name: Literal["inputModelVersion"] = "inputModelVersion"
-    value: str = "gemini-3-pro-preview"
-    type: Literal["string"] = "string"
-    field: Literal["textInput"] = "textInput"
+    value: Union[VersionFlash3, VersionPro3, VersionFlash2]
+    type: Literal["object"] = "object"
+    field: Literal["dropdownlist"] = "dropdownlist"
 
     class Config:
         title = "Model Version"
@@ -162,10 +188,6 @@ class CodeExecutionOptions(Config):
     class Config:
         title = "Code Execution"
 
-
-
-
-
 class ModeUnconstrained(Config):
     name: Literal["unconstrained"] = "unconstrained"
     value: Literal["unconstrained"] = "unconstrained"
@@ -194,14 +216,7 @@ class ModeClassification(Config):
     class Config:
         title = "Single-Label Classification"
 
-class ModeOCR(Config):
-    name: Literal["ocr"] = "ocr"
-    value: Literal["ocr"] = "ocr"
-    type: Literal["string"] = "string"
-    field: Literal["option"] = "option"
 
-    class Config:
-        title = "Text Recognition (OCR)"
 
 class ModeVQA(Config):
     name: Literal["visual-question-answering"] = "visual-question-answering"
@@ -231,12 +246,6 @@ class ModeDetailedCaption(Config):
     class Config:
         title = "Captioning (Detailed)"
 
-class ModeClassification(Config):
-    name: Literal["classification"] = "classification"
-    value: Literal["classification"] = "classification"
-    type: Literal["string"] = "string"
-    field: Literal["option"] = "option"
- 
 
     class Config:
         title = "Single-Label Classification"
@@ -320,11 +329,14 @@ class GeminiInputs(Inputs):
 
 class GeminiConfigs(Configs):
     taskType: TaskType
+    inputPrompt: InputPrompt
+    inputClasses: InputClasses
     inputApiKey: InputApiKey
     inputModelVersion: InputModelVersion
-    inputPrompt: Optional[InputPrompt] = None
-    inputClasses: Optional[InputClasses] = None
+    thinkingLevel: ThinkingLevel
+    inputTemperature: TemperatureConfig 
     maxTokens: MaxTokens
+    codeExecution: CodeExecutionOptions 
     maxConcurrentRequests: MaxConcurrentRequests
 
 
@@ -369,13 +381,11 @@ class ConfigExecutor(Config):
         }
         
 
-
-
 class PackageConfigs(Configs):
     executor: ConfigExecutor
 
 
 class PackageModel(Package):
-    name: Literal["GoogleGemini"] = "GoogleGemini"
+    name: Literal["CapGemini"] = "CapGemini"
     configs: PackageConfigs
     type: Literal["component"] = "component"
