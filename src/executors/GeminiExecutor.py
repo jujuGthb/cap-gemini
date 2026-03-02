@@ -23,14 +23,17 @@ class GeminiExecutor(Component):
         self.request.model = PackageModel(**(self.request.data))
 
         self.task_type = self.request.get_param("taskType")
-        self.api_key = self.request.get_param("inputApiKey")
-        self.model_version = self.request.get_param("inputModelVersion")
-        self.max_tokens = self.request.get_param("maxTokens")
-        self.temperature = self.request.get_param("inputTemperature")
-        
-      
         self.prompt = self.request.get_param("inputPrompt")
         self.classes = self.request.get_param("inputClasses")
+        self.api_key = self.request.get_param("inputApiKey")
+        self.model_version = self.request.get_param("inputModelVersion")
+        self.thinking_level = self.request.get_param("thinkingLevel")
+        self.temperature = self.request.get_param("inputTemperature")
+        self.max_tokens = self.request.get_param("maxTokens")
+        self.code_execution = self.request.get_param("codeExecution")
+        self.max_concurrent_requests = self.request.get_param("maxConcurrentRequests")
+        
+        
         
         self.image_selector = self.request.get_param("inputImage")
 
@@ -42,26 +45,54 @@ class GeminiExecutor(Component):
         img_obj = Image.get_frame(img=self.image_selector, redis_db=self.redis_db)
         
         success, encoded_image = cv2.imencode('.jpg', img_obj.value)
-        base64_image = base64.b64encode(encoded_image).decode('utf-8')
         
-        if not success: raise RuntimeError("Failed to encode image for API")
+        if not success:
+            raise RuntimeError("Failed to encode image for API")
+        
+        base64_image = base64.b64encode(encoded_image).decode('utf-8')
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_version}:generateContent"
+
+        
+        
+        parts = []
+        
+        if self.prompt:
+            parts.append({"text": self.prompt})
+            
+        parts.append({
+            "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": base64_image
+            }
+        })
+        
+        if self.classes and self.task_type in ["classification", "multi-label-classification", "object-detection"]:
+            class_str = ", ".join(self.classes) if isinstance(self.classes, list) else self.classes
+            parts.append({"text": f"\nList of classes to recognize: {class_str}"})
+            
+        gen_config = {
+            "max_output_tokens": self.max_tokens,
+            "temperature": self.temperature if self.temperature is not None else 1.0
+        }
+        
+        if self.thinking_level:
+            gen_config["thinking_config"] = {"thinking_level": self.thinking_level}
+            
         
         payload = {
-            "contents": [{
-                "parts": [
-                    {"text": self.prompt if self.prompt else "Describe this image"},
-                    {"inline_data": {"mime_type": "image/jpeg", "data": base64_image}}
-                ]
-            }],
-            "generationConfig": {
-                "maxOutputTokens": self.max_tokens,
-                "temperature": self.temperature
-            }
+            "model": self.model_version,
+            "google_api_key": self.api_key,
+            "contents": [{"parts": parts}],
+            "generationConfig": gen_config
         }
-
+        
+        if self.code_execution:
+            payload["tools"] = [{"code_execution": {}}]
+            
+        url = "https://api.roboflow.com/apiproxy/gemini"
+        
         try:
+            headers = {"Authorization": f"Bearer {self.api_key}"}
             response = requests.post(url, params={"key": self.api_key}, json=payload)
             response.raise_for_status()
             data = response.json()
