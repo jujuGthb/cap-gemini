@@ -7,21 +7,23 @@ from components.CapGemini.src.models.PackageModel import (
     GeminiResponse,
     GeminiOutputs,
     OutputText,
-    OutputClasses
+    Classes
 )
 def build_response_gemini(context):
+    
+    print(f"[DEBUG] build_response_gemini called")
+    print(f"[DEBUG] gemini_text: {context.gemini_text[:100]}")
    
-    outputText = OutputText(value=context.output_text)
-    outputClasses = OutputClasses(value=context.output_classes)
+    output = OutputText(value=context.gemini_text)
+    classes = Classes(value=context.gemini_classes if context.gemini_classes else [])
+    
+    
 
-    geminiOutputs = GeminiOutputs(outputText=outputText,outputClasses=outputClasses)
+    geminiOutputs = GeminiOutputs(output=output, classes=classes)
     geminiResponse = GeminiResponse(outputs=geminiOutputs)
     geminiExecutor = GeminiExecutor(value=geminiResponse)
     executor = ConfigExecutor(value=geminiExecutor)
     packageConfigs = PackageConfigs(executor=executor)
     package = PackageHelper(packageModel=PackageModel, packageConfigs=packageConfigs)
-
-   
-    packageModel = package.build_model(context)
-
-    return packageModel
+    
+    return package.build_model(context)
