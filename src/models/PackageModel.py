@@ -24,28 +24,28 @@ class InputImage(Input):
 
 
 class OutputText(Output):
-    name: Literal["outputText"] = "outputText"
-    value: str
+    name: Literal["output"] = "output"
+    value: Optional[str]
     type: Literal["string"] = "string"
 
+
     class Config:
-        title = "Output Text"
+        title = "Output"
 
 
-class OutputClasses(Output):
-    name: Literal["outputClasses"] = "outputClasses"
+class Classes(Output):
+    name: Literal["classes"] = "classes"
     value: Union[List[str], str]
     type: str = "object"
 
-    @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
-        value = values.get("value")
-        if isinstance(value, list):
-            return "list"
-        return "object"
+    @validator("type", always=True)
+    def set_type_based_on_value(cls, val, values):
+        val = values.get("value")
 
-    class Config:
-        title = "Output Classes"
+        if isinstance(val, list):
+            return "list"
+
+        return "object"
 
 class InputPrompt(Config):
     name: Literal["inputPrompt"] = "inputPrompt"
@@ -58,16 +58,9 @@ class InputPrompt(Config):
         
 class InputClasses(Config):
     name: Literal["inputClasses"] = "inputClasses"
-    value: Union[List[str], str]
-    type: str = "object"
-
-    @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
-        value = values.get("value")
-        if isinstance(value, list):
-            return "list"
-        return "object"
-
+    value: List[str]
+    type: Literal["list"] = "list"
+    field: Literal["textInput"]="textInput"
     class Config:
         title = "Classes"
         
@@ -246,9 +239,6 @@ class ModeDetailedCaption(Config):
     class Config:
         title = "Captioning (Detailed)"
 
-
-    class Config:
-        title = "Single-Label Classification"
 class ModeMultiLabelClassification(Config):
     name: Literal["multi-label-classification"] = "multi-label-classification"
     value: Literal["multi-label-classification"] = "multi-label-classification"
@@ -298,29 +288,7 @@ class TaskType(Config):
     class Config:
         title = "Task Type"
 
-
-class OutputText(Output):
-    name: Literal["outputText"] = "outputText"
-    value: str
-    type: Literal["string"] = "string"
-
-    class Config:
-        title = "Output Text"
         
-class OutputClasses(Output):
-    name: Literal["outputClasses"] = "outputClasses"
-    value: Union[List[str], str]
-    type: str = "object"
-
-    @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
-        value = values.get("value")
-        if isinstance(value, list):
-            return "list"
-        return "object"
-
-    class Config:
-        title = "Output Classes"
 
 
 class GeminiInputs(Inputs):
@@ -341,8 +309,8 @@ class GeminiConfigs(Configs):
 
 
 class GeminiOutputs(Outputs):
-    outputText: OutputText
-    outputClasses: OutputClasses
+    output: OutputText
+    classes: Classes
 
 
 class GeminiRequest(Request):
